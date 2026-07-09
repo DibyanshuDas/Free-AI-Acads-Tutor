@@ -1,9 +1,3 @@
-Here's the **updated `README.md`** without any license section, keeping it clean and practical.
-
----
-
-## 📚 Updated `README.md` (No License)
-
 ```markdown
 # Acads AI Tutor – Your Free, Self-Hosted Study Buddy
 
