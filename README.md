@@ -1,4 +1,4 @@
-# 📚 Acads AI Tutor – Your Free, Self‑Hosted Study Buddy
+# Acads AI Tutor – Your Free, Self‑Hosted Study Buddy
 
 > *"I was using Gemini Pro and ChatGPT for a while—they were free, and they worked beautifully. But then the free trials started expiring, and the renewal notices hit my inbox. I thought, 'How am I going to study for my fluid mechanics exams without AI help?' So I built this. Now I have my own private AI tutor, running on my machine, using NVIDIA's latest models for free (yes, actually free), without worrying about monthly subscriptions."*
 
@@ -6,23 +6,23 @@ This is a **personal AI chat assistant** that you run on your own computer. It u
 
 ---
 
-## ✨ What Makes This Special?
+## What Makes This Special?
 
 | Feature | What It Does |
 | :------ | :----------- |
-| **🧠 Multi‑Modal Q&A** | Ask about text, images, or PDFs – the AI sees everything you show it. |
-| **📄 PDF → Images Automatically** | Drop a PDF, and your browser converts every page to an image instantly (no server processing). |
-| **🧵 Full Chat Memory** | The AI remembers your whole conversation, including images. Ask follow‑ups like *"go to the next slide"* without re‑uploading. |
-| **🔄 Smart Fallback Chains** | If one free model is down or rate‑limited, the backend automatically tries another one. No more *"Model unavailable"* errors. |
-| **📐 Resizable Width** | Drag a slider to adjust the chat window width to your preference. |
-| **🌙 Dark Mode** | Study late at night without eye strain. |
-| **📎 Drag, Drop & Paste** | Attach files by dragging them onto the page or pasting from the clipboard – super intuitive. |
-| **📝 Beautiful Math Rendering** | LaTeX equations render perfectly using KaTeX. No more ugly `x^2` approximations. |
-| **💾 Full Local Storage** | Your entire chat history (including images) is saved in your browser – close the tab, reopen it, and continue right where you left off. |
+| ** Multi‑Modal Q&A** | Ask about text, images, or PDFs – the AI sees everything you show it. |
+| **PDF → Images Automatically** | Drop a PDF, and your browser converts every page to an image instantly (no server processing). |
+| ** Full Chat Memory** | The AI remembers your whole conversation, including images. Ask follow‑ups like *"go to the next slide"* without re‑uploading. |
+| **Smart Fallback Chains** | If one free model is down or rate‑limited, the backend automatically tries another one. No more *"Model unavailable"* errors. |
+| **Resizable Width** | Drag a slider to adjust the chat window width to your preference. |
+| **Dark Mode** | Study late at night without eye strain. |
+| **Drag, Drop & Paste** | Attach files by dragging them onto the page or pasting from the clipboard – super intuitive. |
+| **Beautiful Math Rendering** | LaTeX equations render perfectly using KaTeX. No more ugly `x^2` approximations. |
+| **Full Local Storage** | Your entire chat history (including images) is saved in your browser – close the tab, reopen it, and continue right where you left off. |
 
 ---
 
-## 🧠 How It Works (Under the Hood)
+## How It Works (Under the Hood)
 
 - **Frontend**: Plain HTML/CSS/JS – no frameworks, no build tools. Just open `index.html` and it works.
 - **Backend**: FastAPI server that acts as a bridge between your browser and OpenRouter's AI models.
@@ -31,7 +31,7 @@ This is a **personal AI chat assistant** that you run on your own computer. It u
 
 ---
 
-## 🚀 Quick Start (The "5‑Minute Setup")
+## Quick Start (The "5‑Minute Setup")
 
 ### 1. Get an OpenRouter API Key (It's Free!)
 
@@ -146,7 +146,7 @@ The AI will still "see" the earlier images because the entire conversation (incl
 
 ---
 
-## 🔁 How the Model Fallback Works
+## How the Model Fallback Works
 
 The backend uses multiple models so you're never stuck if one is down:
 
@@ -164,7 +164,7 @@ If the first model fails (rate limit, "DEGRADED" function, timeout), the backend
 
 ---
 
-## 🛠️ Troubleshooting
+##  Troubleshooting
 
 | Issue | Solution |
 | :---- | :------- |
@@ -177,7 +177,7 @@ If the first model fails (rate limit, "DEGRADED" function, timeout), the backend
 
 ---
 
-## 💡 Why I Built This
+##  Why I Built This
 
 Look, I'm a student. I love AI tools – they've saved my grades more times than I can count. But I can't afford ChatGPT Pro or Gemini Advanced. The free trials were great while they lasted, but once they expired, I was stuck.
 
@@ -189,7 +189,7 @@ If you're a student like me, I hope this helps you get through your studies. It'
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 Acads-AI-Tutor/
@@ -202,7 +202,7 @@ Acads-AI-Tutor/
 
 ---
 
-## 🧪 Future Plans (If I Have Time)
+## Future Plans (If I Have Time)
 
 - **Better error messages** – so you know exactly what went wrong.
 - **Markdown export** – save the entire chat as a clean Markdown file for revision.
@@ -211,13 +211,13 @@ Acads-AI-Tutor/
 
 ---
 
-## 📄 License
+## License
 
 MIT – use it for anything, modify it, share it, sell it (if you can). Just don't forget to mention where you got it – I'd appreciate the credit.
 
 ---
 
-## 🙏 Acknowledgements
+##  Acknowledgements
 
 - **OpenRouter** – for giving students free access to world‑class AI models.
 - **NVIDIA** – for releasing such powerful models for free (you guys are heroes).
@@ -226,7 +226,7 @@ MIT – use it for anything, modify it, share it, sell it (if you can). Just don
 
 ---
 
-### 💬 Final Words
+### Final Words
 
 This is a passion project built by a student for students. It's not perfect, but it's honest. If you run into issues, please open an issue on GitHub – I'll try to help when I can.
 
