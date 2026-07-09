@@ -10,9 +10,9 @@ This is a **personal AI chat assistant** that you run on your own computer. It u
 
 | Feature | What It Does |
 | :------ | :----------- |
-| ** Multi‑Modal Q&A** | Ask about text, images, or PDFs - the AI sees everything you show it. |
+| **Multi‑Modal Q&A** | Ask about text, images, or PDFs - the AI sees everything you show it. |
 | **PDF → Images Automatically** | Drop a PDF, and your browser converts every page to an image instantly (no server processing). |
-| ** Full Chat Memory** | The AI remembers your whole conversation, including images. Ask follow‑ups like *"go to the next slide"* without re‑uploading. |
+| **Full Chat Memory** | The AI remembers your whole conversation, including images. Ask follow‑ups like *"go to the next slide"* without re‑uploading. |
 | **Smart Fallback Chains** | If one free model is down or rate‑limited, the backend automatically tries another one. No more *"Model unavailable"* errors. |
 | **Resizable Width** | Drag a slider to adjust the chat window width to your preference. |
 | **Dark Mode** | Study late at night without eye strain. |
