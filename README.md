@@ -1,4 +1,3 @@
-```markdown
 # Acads AI Tutor – Your Free, Self-Hosted Study Buddy
 
 *"I was using Gemini Pro and ChatGPT for a while—they were free, and they worked beautifully. But then the free trials started expiring, and the renewal notices hit my inbox. I thought, 'How am I going to study for my fluid mechanics exams without AI help?' So I built this. Now I have my own private AI tutor, running on my machine, using NVIDIA's latest models for free (yes, actually free), without worrying about monthly subscriptions."*
@@ -45,8 +44,6 @@ This is a **personal AI chat assistant** that you run on your own computer. It u
 ```bash
 git clone <your-repo-url>
 cd Acads-AI-Tutor
-```
-
 Or just download the ZIP and extract it somewhere.
 
 ### 3. Install the Python Dependencies
