@@ -15,12 +15,6 @@ contains an image, it routes the whole request to the vision-capable model
 so image context is never lost on later text-only follow-ups (e.g. "go to
 the next slide"). Otherwise it uses the cheaper text-only model.
 
-Each route (text / vision) now has a fallback CHAIN instead of a single
-model. If the primary model's provider returns an error (e.g. NVIDIA
-marking a function "DEGRADED", rate limits, timeouts), we automatically
-retry the same request on the next model in the chain instead of failing
-the whole /ask call.
-
 Setup:
     1. pip install fastapi uvicorn openai python-dotenv
     2. Create a .env file next to this script with:
@@ -30,12 +24,14 @@ Setup:
 """
 
 import os
-from typing import Any, Dict, List, Optional
+import time
+from typing import Any, Dict, List, Optional, Tuple
 
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from openai import OpenAI
+from openai.types.chat import ChatCompletion
 from pydantic import BaseModel
 
 load_dotenv()
@@ -58,31 +54,15 @@ client = OpenAI(
 MAX_OUTPUT_TOKENS = 1500
 REASONING_BUDGET = 2000
 
-# --- Model fallback chains -------------------------------------------------
-# First entry in each list is the primary model, used unless it errors out.
-# If a request fails (provider error, degraded function, timeout, etc.) we
-# move to the next model in the same chain and retry the identical request.
-#
-# Verified live against https://openrouter.ai/api/v1/models on 2026-07-09.
-# Free-tier availability rotates over time (models get added/retired without
-# much notice) — if you start seeing 404 "no longer free" errors again,
-# re-check that endpoint and swap in whatever's current.
+TEXT_MODEL = "nvidia/nemotron-3-ultra-550b-a55b:free"
+VISION_MODEL = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free"
 
-TEXT_MODELS = [
-    "nvidia/nemotron-3-ultra-550b-a55b:free",
-    "meta-llama/llama-3.3-70b-instruct:free",
-    "tencent/hy3:free",
-]
-
-VISION_MODELS = [
-    "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
-    "nvidia/nemotron-nano-12b-v2-vl:free",
-    "meta-llama/llama-3.2-11b-vision-instruct:free",
-]
-
-# Only the nemotron text model understands these extra reasoning params.
-# Fallback models get a plain request without this extra_body.
-NEMOTRON_TEXT_MODEL = TEXT_MODELS[0]
+# Free-tier OpenRouter models occasionally hit upstream worker/rate limits
+# (e.g. "ResourceExhausted: Worker local total request limit reached").
+# These are almost always transient, so we retry a few times with backoff
+# before giving up and telling the user plainly what happened.
+MAX_RETRIES = 3
+RETRY_BASE_DELAY_SECONDS = 1.5
 
 SYSTEM_PROMPT = (
     "You are a careful tutor answering inside a chat interface. Write in "
@@ -113,55 +93,101 @@ def message_has_image(msg: Dict[str, Any]) -> bool:
     return False
 
 
-def build_kwargs(model: str, full_messages: List[Dict[str, Any]]) -> Dict[str, Any]:
-    kwargs: Dict[str, Any] = dict(
-        model=model,
-        messages=full_messages,
-        max_tokens=MAX_OUTPUT_TOKENS,
+def extract_upstream_error(completion: ChatCompletion) -> Optional[str]:
+    """OpenRouter sometimes returns HTTP 200 with every normal field empty
+    and the real problem smuggled into an 'error' field instead of raising.
+    That's the case that used to leak straight into the frontend as a raw
+    ChatCompletion repr. Catch it here instead."""
+    err = getattr(completion, "error", None)
+    if not err:
+        return None
+    if isinstance(err, dict):
+        return err.get("message") or str(err)
+    return str(err)
+
+
+def is_transient_error(error_text: str) -> bool:
+    text = error_text.lower()
+    return any(
+        marker in text
+        for marker in [
+            "resourceexhausted",
+            "resource exhausted",
+            "rate limit",
+            "rate_limit",
+            "worker local total request limit",
+            "502",
+            "503",
+            "overloaded",
+            "timeout",
+            "timed out",
+        ]
     )
-    # Only the primary nemotron text model gets the extra reasoning params —
-    # other providers/models don't recognize this extra_body shape.
-    if model == NEMOTRON_TEXT_MODEL:
-        kwargs["extra_body"] = {
-            "chat_template_kwargs": {"enable_thinking": True},
-            "reasoning_budget": REASONING_BUDGET,
-        }
-    return kwargs
 
 
-def call_with_fallback(model_chain: List[str], full_messages: List[Dict[str, Any]]):
-    """Try each model in model_chain in order, returning the first success.
-    Raises the last error if every model in the chain fails."""
-    last_error: Optional[Exception] = None
-    for model in model_chain:
+def call_model_with_retry(kwargs: Dict[str, Any]) -> Tuple[Optional[ChatCompletion], Optional[str]]:
+    """Calls the model, retrying transient upstream failures with backoff.
+    Returns (completion, error_message). error_message is None on success."""
+    last_error: Optional[str] = None
+    completion: Optional[ChatCompletion] = None
+
+    for attempt in range(MAX_RETRIES):
         try:
-            kwargs = build_kwargs(model, full_messages)
             completion = client.chat.completions.create(**kwargs)
-            return completion, model
-        except Exception as e:
-            print(f"[fallback] model '{model}' failed: {e}")
-            last_error = e
+        except Exception as exc:  # network errors, timeouts, etc.
+            last_error = str(exc)
+            if attempt < MAX_RETRIES - 1 and is_transient_error(last_error):
+                time.sleep(RETRY_BASE_DELAY_SECONDS * (2 ** attempt))
+                continue
+            return None, last_error
+
+        upstream_error = extract_upstream_error(completion)
+        if upstream_error is None and completion.choices:
+            return completion, None  # success
+
+        last_error = upstream_error or "The model returned no answer."
+        if attempt < MAX_RETRIES - 1 and is_transient_error(last_error):
+            time.sleep(RETRY_BASE_DELAY_SECONDS * (2 ** attempt))
             continue
-    raise last_error
+        return completion, last_error
+
+    return completion, last_error
 
 
 @app.post("/ask")
 def ask(payload: AskRequest):
     messages = payload.messages
     conversation_has_images = any(message_has_image(m) for m in messages)
-    model_chain = VISION_MODELS if conversation_has_images else TEXT_MODELS
+    model = VISION_MODEL if conversation_has_images else TEXT_MODEL
 
     full_messages = [{"role": "system", "content": SYSTEM_PROMPT}] + messages
 
-    try:
-        completion, model_used = call_with_fallback(model_chain, full_messages)
-    except Exception as e:
-        return {"answer": f"(All models in the fallback chain failed. Last error: {e})"}
+    kwargs: Dict[str, Any] = dict(
+        model=model,
+        messages=full_messages,
+        max_tokens=MAX_OUTPUT_TOKENS,
+    )
+    if model == TEXT_MODEL:
+        kwargs["extra_body"] = {
+            "chat_template_kwargs": {"enable_thinking": True},
+            "reasoning_budget": REASONING_BUDGET,
+        }
 
-    print("RAW COMPLETION:", completion)  # debug: remove once things work
-    if not completion.choices:
-        return {"answer": f"(No answer returned. Raw response: {completion})", "model_used": model_used}
-    return {"answer": completion.choices[0].message.content, "model_used": model_used}
+    completion, error = call_model_with_retry(kwargs)
+    print("RAW COMPLETION:", completion, "| ERROR:", error)  # debug: remove once things work
+
+    if error:
+        if is_transient_error(error):
+            friendly = (
+                "The free-tier model is temporarily overloaded on OpenRouter's "
+                "side (too many requests hitting it at once). This usually "
+                "clears up within a few seconds — please try asking again."
+            )
+        else:
+            friendly = f"The model returned an error and couldn't answer: {error}"
+        return {"answer": friendly, "model_used": model, "error": error}
+
+    return {"answer": completion.choices[0].message.content, "model_used": model}
 
 
 @app.get("/health")
